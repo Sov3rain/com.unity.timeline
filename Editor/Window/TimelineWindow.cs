@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Timeline;
 using Object = UnityEngine.Object;
 
+
 namespace UnityEditor.Timeline
 {
     internal interface IWindowStateProvider
@@ -507,9 +508,9 @@ namespace UnityEditor.Timeline
                 instance.Repaint();
         }
 
-        internal class DoCreateTimeline : ProjectWindowCallback.EndNameEditAction
+        internal class DoCreateTimeline : PostNameEditAction
         {
-            public override void Action(int id, string pathName, string resourceFile)
+            protected override void Action(ObjectId id, string pathName, string resourceFile)
             {
                 var timeline = TimelineUtility.CreateAndSaveTimelineAsset(pathName);
                 ProjectWindowUtil.ShowCreatedAsset(timeline);
@@ -520,7 +521,7 @@ namespace UnityEditor.Timeline
         public static void CreateNewTimeline()
         {
             var icon = EditorGUIUtility.IconContent("TimelineAsset Icon").image as Texture2D;
-            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, CreateInstance<DoCreateTimeline>(), "New Timeline.playable", icon, null);
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(ObjectId.InvalidId, CreateInstance<DoCreateTimeline>(), "New Timeline.playable", icon, null);
         }
 
         [MenuItem("Window/Sequencing/Timeline", false, 1)]
@@ -531,7 +532,7 @@ namespace UnityEditor.Timeline
         }
 
         [OnOpenAsset(1)]
-        public static bool OnDoubleClick(int instanceID, int line)
+        public static bool OnDoubleClick(EntityId instanceID, int line)
         {
             var assetDoubleClicked = new ObjectId(instanceID).IdToObject() as TimelineAsset;
             if (assetDoubleClicked == null)

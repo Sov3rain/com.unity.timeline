@@ -76,7 +76,7 @@ namespace UnityEditor.Timeline
         public sealed override void FetchData()
         {
             // create root item
-            m_RootItem = new TimelineGroupGUI(m_TreeView, m_ParentGUI, new ObjectId(1), 0, null, "root", null, true);
+            m_RootItem = new TimelineGroupGUI(m_TreeView, m_ParentGUI, ObjectId.InvalidId, 0, null, "root", null, true);
 
             var tree = new Dictionary<TrackAsset, TimelineTrackBaseGUI>();
 
@@ -128,7 +128,7 @@ namespace UnityEditor.Timeline
                 if (parentItem != null && parentItem.track != null)
                     parent = parentItem.track;
 
-                newItem = new TimelineTrackErrorGUI(m_TreeView, m_ParentGUI, ObjectId.DefaultId, theDepth, parentItem, "ERROR", scriptableObject, parent);
+                newItem = new TimelineTrackErrorGUI(m_TreeView, m_ParentGUI, ObjectId.InvalidId, theDepth, parentItem, "ERROR", scriptableObject, parent);
             }
             else if (trackAsset.GetType() != typeof(GroupTrack))
             {

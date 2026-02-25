@@ -12,12 +12,12 @@ namespace UnityEditor.Timeline.Signals
         public static void CreateNewSignal()
         {
             var icon = EditorGUIUtility.IconContent("SignalAsset Icon").image as Texture2D;
-            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, CreateInstance<DoCreateSignalAsset>(), "New Signal.signal", icon, null);
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(ObjectId.InvalidId, CreateInstance<DoCreateSignalAsset>(), "New Signal.signal", icon, null);
         }
 
-        class DoCreateSignalAsset : ProjectWindowCallback.EndNameEditAction
+        class DoCreateSignalAsset : PostNameEditAction
         {
-            public override void Action(int instanceId, string pathName, string resourceFile)
+            protected override void Action(ObjectId objectId, string pathName, string resourceFile)
             {
                 var signalAsset = CreateInstance<SignalAsset>();
                 AssetDatabase.CreateAsset(signalAsset, pathName);

@@ -2,6 +2,12 @@
 
 All notable changes to this package will be documented in this file. The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 
+## [1.8.11] - 2026-02-25
+
+### Fixed
+
+- Fix performance regression in Custom Clip PlayableAsset Inspector where animated parameters caused Timeline Window to refresh when scrubbing or playing the Timeline (UUM-133569)
+
 ## [1.8.10] - 2025-12-05
 
 ### Fixed

@@ -8,8 +8,6 @@ using UnityEngine.Timeline;
 using TreeViewItem = UnityEditor.IMGUI.Controls.TreeViewItem<int>;
 using TreeViewState = UnityEditor.IMGUI.Controls.TreeViewState<int>;
 using TreeView = UnityEditor.IMGUI.Controls.TreeView<int>;
-#else
-using UnityEditor.IMGUI.Controls;
 #endif
 
 namespace UnityEditor.Timeline.Signals

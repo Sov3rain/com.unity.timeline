@@ -81,10 +81,12 @@ namespace UnityEditor.Timeline
             const string k_FoldoutClassName = "clip-inspector-custom-properties__foldout";
             const string k_InspectorElementClassName = "clip-inspector-custom-properties__inspector";
 
-            public event Action OnPropertyChanged;
+            public event Action<bool> OnPropertyChanged;
 
             static StyleSheet s_StyleSheet;
             readonly VisualElement m_Container;
+            bool m_PropertyChangedQueued = false;
+            bool m_TimelineWindowNeedsRefresh = false;
 
             public CustomPropertiesElement(Editor editor, string title)
             {
@@ -106,13 +108,18 @@ namespace UnityEditor.Timeline
 #if UNITY_2021_2_OR_NEWER
                 var inspectorElement = new InspectorElement(editor);
                 inspectorElement.AddToClassList(k_InspectorElementClassName);
-                inspectorElement.TrackSerializedObjectValue(editor.serializedObject, _ => OnPropertyChanged?.Invoke());
+
+                var prop = editor.serializedObject.GetIterator();
+                while (prop.NextVisible(true))
+                {
+                    inspectorElement.TrackPropertyValue(prop, HandlePropertyChanged);
+                }
 
                 // when an ExposedReference is changed, its ID does not change and does not trigger a property change
                 // add a callback on the context object (which is usually the Playable Director) when the exposed reference property table is modified
                 using SerializedProperty property = TimelineInspectorUtility.FindExposedReferenceTableFrom(editor.m_Context);
                 if (property != null)
-                    this.TrackPropertyValue(property, _ => OnPropertyChanged?.Invoke());
+                    this.TrackPropertyValue(property, HandlePropertyChanged);
 
                 m_Container.Add(inspectorElement);
 #else
@@ -122,7 +129,7 @@ namespace UnityEditor.Timeline
                     {
                         editor.OnInspectorGUI();
                         if (scope.changed)
-                            OnPropertyChanged?.Invoke();
+                            OnPropertyChanged?.Invoke(true);
                     }
                 }));
 #endif
@@ -133,6 +140,24 @@ namespace UnityEditor.Timeline
                 bool enabled = !locked;
                 if (m_Container.enabledSelf != enabled)
                     m_Container.SetEnabled(enabled);
+            }
+
+            void HandlePropertyChanged(SerializedProperty property)
+            {
+                bool fromAnimation = AnimationMode.InAnimationMode() && !AnimationMode.InAnimationRecording() &&
+                                     property.isAnimated;
+                // We do not want to refresh Timeline Window when the value is driven by animation.
+                m_TimelineWindowNeedsRefresh |= !fromAnimation;
+
+                if (m_PropertyChangedQueued) return;
+                m_PropertyChangedQueued = true;
+
+                schedule.Execute(() =>
+                {
+                    OnPropertyChanged?.Invoke(m_TimelineWindowNeedsRefresh);
+                    m_PropertyChangedQueued = false;
+                    m_TimelineWindowNeedsRefresh = false;
+                });
             }
         }
 
@@ -690,15 +715,17 @@ namespace UnityEditor.Timeline
             EditorGUILayout.EndHorizontal();
         }
 
-        void OnCustomInspectorChanged()
+        void OnCustomInspectorChanged(bool windowNeedsRefresh)
         {
+
             MarkClipsDirty();
             if (TimelineWindow.IsEditingTimelineAsset(m_TimelineAsset) && TimelineEditor.state != null)
             {
                 //the playable asset editor can control how it handles property changes
                 if (m_SelectedPlayableAssetsInspector is IInspectorChangeHandler inspectorChangeHandler)
                     inspectorChangeHandler.OnPlayableAssetChangedInInspector();
-                else //refresh the timeline by default
+                // Redraw only when needed
+                else if (windowNeedsRefresh)
                     TimelineEditor.Refresh(RefreshReason.ContentsModified);
             }
         }

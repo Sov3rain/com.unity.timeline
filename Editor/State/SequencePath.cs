@@ -37,7 +37,7 @@ namespace UnityEditor.Timeline
 
         public void Clear()
         {
-            m_SelectionRoot = ObjectId.DefaultId;
+            m_SelectionRoot = ObjectId.InvalidId;
             subElements.Clear();
         }
 

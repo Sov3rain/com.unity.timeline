@@ -1,7 +1,7 @@
 {
   "name": "com.unity.timeline",
   "displayName": "Timeline",
-  "version": "1.8.10",
+  "version": "1.8.11",
   "unity": "2022.3",
   "keywords": [
     "unity",
@@ -18,19 +18,19 @@
     "com.unity.modules.particlesystem": "1.0.0"
   },
   "relatedPackages": {
-    "com.unity.timeline.tests": "1.8.10"
+    "com.unity.timeline.tests": "1.8.11"
   },
   "_upm": {
-    "changelog": "### Fixed\n\n- Fix compilation error for version 2023.2 of the editor (TB-352)\n- Fixed an issue where it was possible for 2 clips to have a micro overlap that was not detected as a blend, resulting in both clips playing at the same time with a weight of one. (TB-345)"
+    "changelog": "### Fixed\n\n- Fix performance regression in Custom Clip PlayableAsset Inspector where animated parameters caused Timeline Window to refresh when scrubbing or playing the Timeline (UUM-133569)"
   },
   "upmCi": {
-    "footprint": "a6f178f50d471675fca1bbd8e13b3f592cd5fc8b"
+    "footprint": "7ad675cd67255d46cc9549241fa113a8e38cf918"
   },
   "documentationUrl": "https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/index.html",
   "repository": {
     "url": "https://github.cds.internal.unity3d.com/unity/com.unity.timeline.git",
     "type": "git",
-    "revision": "a83681b24217526a0f539d70ddca4abf270a5ada"
+    "revision": "cdac322c9875133dd1579842f73adb7f463c6d0b"
   },
   "samples": [
     {
