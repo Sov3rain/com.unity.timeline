@@ -13,16 +13,26 @@ namespace Timeline.Samples
         public double clipInTime;
         public double startTime;
 
+        public bool ownsVideoPlayer;
+        public bool allowPreload = true;
+        public bool applyCameraAlpha = true;
+        public bool isSharedBoundPlayer;
+
         private bool preparing;
 
         // Called by the mixer (VideoSchedulerPlayableBehaviour) when this is nearly active to
         // give the video time to load.
         public void PrepareVideo()
         {
+            if (!allowPreload)
+                return;
+
             if (videoPlayer == null || videoPlayer.isPrepared || preparing)
                 return;
 
-            videoPlayer.targetCameraAlpha = 0.0f;
+            if (applyCameraAlpha)
+                videoPlayer.targetCameraAlpha = 0.0f;
+
             videoPlayer.time = clipInTime;
             videoPlayer.Prepare();
             preparing = true;
@@ -32,7 +42,7 @@ namespace Timeline.Samples
         //
         public override void PrepareFrame(Playable playable, FrameData info)
         {
-            if (videoPlayer == null)
+            if (videoPlayer == null || videoPlayer.clip == null)
                 return;
 
             // Pause or Play the video to match whether the graph is being scrubbed or playing
@@ -58,8 +68,10 @@ namespace Timeline.Samples
             }
 
             // use the accumulated blend value to set the alpha and the audio volume
-            videoPlayer.targetCameraAlpha = info.effectiveWeight;
-            if (videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
+            if (applyCameraAlpha)
+                videoPlayer.targetCameraAlpha = info.effectiveWeight;
+
+            if (!isSharedBoundPlayer && videoPlayer.audioOutputMode == VideoAudioOutputMode.Direct)
             {
                 for (ushort i = 0; i < videoPlayer.clip.audioTrackCount; ++i)
                     videoPlayer.SetDirectAudioVolume(i, info.effectiveWeight);
@@ -96,14 +108,18 @@ namespace Timeline.Samples
         // Called when the playable is destroyed.
         public override void OnPlayableDestroy(Playable playable)
         {
-            if (videoPlayer != null)
-            {
-                videoPlayer.Stop();
-                if (Application.isPlaying)
-                    Object.Destroy(videoPlayer.gameObject);
-                else
-                    Object.DestroyImmediate(videoPlayer.gameObject);
-            }
+            if (videoPlayer == null)
+                return;
+
+            videoPlayer.Stop();
+
+            if (!ownsVideoPlayer)
+                return;
+
+            if (Application.isPlaying)
+                Object.Destroy(videoPlayer.gameObject);
+            else
+                Object.DestroyImmediate(videoPlayer.gameObject);
         }
 
         // Syncs the video player time to playable time

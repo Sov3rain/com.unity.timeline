@@ -19,16 +19,20 @@ namespace Timeline.Samples
                 if (playable.GetInput(i).GetPlayableType() != typeof(VideoPlayableBehaviour))
                     continue;
 
-                if (playable.GetInputWeight(i) <= 0.0f)
-                {
-                    ScriptPlayable<VideoPlayableBehaviour> scriptPlayable = (ScriptPlayable<VideoPlayableBehaviour>)playable.GetInput(i);
-                    VideoPlayableBehaviour videoPlayableBehaviour = scriptPlayable.GetBehaviour();
-                    double preloadTime = Math.Max(0.0, videoPlayableBehaviour.preloadTime);
-                    double clipStart = videoPlayableBehaviour.startTime;
+                if (playable.GetInputWeight(i) > 0.0f)
+                    continue;
 
-                    if (timelineTime > clipStart - preloadTime && timelineTime <= clipStart)
-                        videoPlayableBehaviour.PrepareVideo();
-                }
+                ScriptPlayable<VideoPlayableBehaviour> scriptPlayable = (ScriptPlayable<VideoPlayableBehaviour>)playable.GetInput(i);
+                VideoPlayableBehaviour videoPlayableBehaviour = scriptPlayable.GetBehaviour();
+
+                if (!videoPlayableBehaviour.allowPreload)
+                    continue;
+
+                double preloadTime = Math.Max(0.0, videoPlayableBehaviour.preloadTime);
+                double clipStart = videoPlayableBehaviour.startTime;
+
+                if (timelineTime > clipStart - preloadTime && timelineTime <= clipStart)
+                    videoPlayableBehaviour.PrepareVideo();
             }
         }
     }

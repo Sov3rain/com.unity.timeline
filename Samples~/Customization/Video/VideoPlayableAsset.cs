@@ -13,8 +13,9 @@ namespace Timeline.Samples
         public enum RenderMode
         {
             CameraFarPlane,
-            CameraNearPlane
-        };
+            CameraNearPlane,
+            RenderTexture
+        }
 
         [Tooltip("The video clip to play.")]
         public VideoClip videoClip;
@@ -37,6 +38,9 @@ namespace Timeline.Samples
         [Tooltip("Specifies which camera to render to. If unassigned, the main camera will be used.")]
         public ExposedReference<Camera> targetCamera;
 
+        [Tooltip("Target RenderTexture when Render Mode is RenderTexture.")]
+        public ExposedReference<RenderTexture> targetTexture;
+
         [Tooltip("Specifies an optional audio source to output to.")]
         public ExposedReference<AudioSource> audioSource;
 
@@ -45,17 +49,28 @@ namespace Timeline.Samples
         public double clipInTime { get; set; }
         public double startTime { get; set; }
 
+        // Injected by VideoTrack at graph build time (runtime only)
+        internal VideoPlayer boundSceneVideoPlayer { get; set; }
+
         // Creates the playable that represents the instance that plays this clip.
         // Here a hidden VideoPlayer is being created for the PlayableBehaviour to use
         // to control playback. The PlayableBehaviour is responsible for deleting the player.
         public override Playable CreatePlayable(PlayableGraph graph, GameObject go)
         {
+            if (videoClip == null)
+                return Playable.Create(graph);
+
             Camera camera = targetCamera.Resolve(graph.GetResolver());
             if (camera == null)
                 camera = Camera.main;
 
+            AudioSource resolvedAudioSource = audioSource.Resolve(graph.GetResolver());
+            bool usingBoundScenePlayer = boundSceneVideoPlayer != null;
+
             // If we are unable to create a player, return a playable with no behaviour attached.
-            VideoPlayer player = CreateVideoPlayer(camera, audioSource.Resolve(graph.GetResolver()));
+            VideoPlayer player = usingBoundScenePlayer
+                ? ConfigureBoundVideoPlayer(boundSceneVideoPlayer)
+                : CreateVideoPlayer(camera, targetTexture.Resolve(graph.GetResolver()), resolvedAudioSource);
             if (player == null)
                 return Playable.Create(graph);
 
@@ -67,6 +82,10 @@ namespace Timeline.Samples
             playableBehaviour.preloadTime = preloadTime;
             playableBehaviour.clipInTime = clipInTime;
             playableBehaviour.startTime = startTime;
+            playableBehaviour.ownsVideoPlayer = !usingBoundScenePlayer;
+            playableBehaviour.allowPreload = !usingBoundScenePlayer;
+            playableBehaviour.applyCameraAlpha = !usingBoundScenePlayer;
+            playableBehaviour.isSharedBoundPlayer = usingBoundScenePlayer;
 
             return playable;
         }
@@ -96,7 +115,28 @@ namespace Timeline.Samples
         }
 
 
-        VideoPlayer CreateVideoPlayer(Camera camera, AudioSource targetAudioSource)
+        VideoPlayer ConfigureBoundVideoPlayer(VideoPlayer videoPlayer)
+        {
+            if (videoPlayer == null || videoClip == null)
+                return null;
+
+            videoPlayer.playOnAwake = false;
+            videoPlayer.source = VideoSource.VideoClip;
+            videoPlayer.clip = videoClip;
+            videoPlayer.waitForFirstFrame = false;
+            videoPlayer.skipOnDrop = true;
+            videoPlayer.isLooping = loop;
+
+            // Important: do NOT override renderMode/targetTexture/targetCamera here.
+            // Scene configuration must remain authoritative in bound mode.
+
+            if (mute)
+                videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+
+            return videoPlayer;
+        }
+
+        VideoPlayer CreateVideoPlayer(Camera camera, RenderTexture renderTexture, AudioSource targetAudioSource)
         {
             if (videoClip == null)
                 return null;
@@ -108,10 +148,24 @@ namespace Timeline.Samples
             videoPlayer.clip = videoClip;
             videoPlayer.waitForFirstFrame = false;
             videoPlayer.skipOnDrop = true;
-            videoPlayer.targetCamera = camera;
-            videoPlayer.renderMode = renderMode == RenderMode.CameraFarPlane ? VideoRenderMode.CameraFarPlane : VideoRenderMode.CameraNearPlane;
             videoPlayer.aspectRatio = aspectRatio;
             videoPlayer.isLooping = loop;
+
+            switch (renderMode)
+            {
+                case RenderMode.CameraFarPlane:
+                    videoPlayer.renderMode = VideoRenderMode.CameraFarPlane;
+                    videoPlayer.targetCamera = camera;
+                    break;
+                case RenderMode.CameraNearPlane:
+                    videoPlayer.renderMode = VideoRenderMode.CameraNearPlane;
+                    videoPlayer.targetCamera = camera;
+                    break;
+                case RenderMode.RenderTexture:
+                    videoPlayer.renderMode = VideoRenderMode.RenderTexture;
+                    videoPlayer.targetTexture = renderTexture;
+                    break;
+            }
 
             videoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
             if (mute)
