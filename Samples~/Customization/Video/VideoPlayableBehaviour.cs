@@ -2,11 +2,9 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Video;
 
-namespace Timeline.Samples
+// The runtime instance of a video clip player in Timeline.
+public sealed class VideoPlayableBehaviour : PlayableBehaviour
 {
-    // The runtime instance of a video clip player in Timeline.
-    public sealed class VideoPlayableBehaviour : PlayableBehaviour
-    {
         public VideoPlayer videoPlayer;
 
         public double preloadTime;
@@ -133,5 +131,4 @@ namespace Timeline.Samples
             else
                 videoPlayer.time = System.Math.Min(playable.GetTime(), videoPlayer.clip.length);
         }
-    }
 }
