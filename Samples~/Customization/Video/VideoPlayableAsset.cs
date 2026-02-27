@@ -100,12 +100,12 @@ public class VideoPlayableAsset : PlayableAsset, ITimelineClipAsset
     }
 
     // Implementation of ITimelineClipAsset. This specifies the capabilities of this timeline clip inside the editor.
-    // For video clips, we are using built-in support for clip-in, speed, blending and looping.
+    // For video clips, we are using built-in support for extrapolation, clip-in, speed, blending and looping.
     public ClipCaps clipCaps
     {
         get
         {
-            var caps = ClipCaps.Blending | ClipCaps.ClipIn | ClipCaps.SpeedMultiplier;
+            var caps = ClipCaps.Extrapolation | ClipCaps.Blending | ClipCaps.ClipIn | ClipCaps.SpeedMultiplier;
             if (loop)
                 caps |= ClipCaps.Looping;
             return caps;

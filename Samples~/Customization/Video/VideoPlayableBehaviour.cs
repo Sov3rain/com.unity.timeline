@@ -31,7 +31,8 @@ public sealed class VideoPlayableBehaviour : PlayableBehaviour
             if (applyCameraAlpha)
                 videoPlayer.targetCameraAlpha = 0.0f;
 
-            videoPlayer.time = clipInTime;
+            if (videoPlayer.clip != null)
+                videoPlayer.time = GetSafeVideoTime(clipInTime, videoPlayer.clip.length, videoPlayer.isLooping);
             videoPlayer.Prepare();
             preparing = true;
         }
@@ -55,7 +56,8 @@ public sealed class VideoPlayableBehaviour : PlayableBehaviour
                 videoPlayer.timeReference = VideoTimeReference.ExternalTime;
                 if (!videoPlayer.isPlaying)
                     videoPlayer.Play();
-                videoPlayer.externalReferenceTime = playable.GetTime() / videoPlayer.playbackSpeed;
+                double syncedTime = GetSafeVideoTime(playable.GetTime(), videoPlayer.clip.length, videoPlayer.isLooping);
+                videoPlayer.externalReferenceTime = syncedTime / videoPlayer.playbackSpeed;
             }
             else
             {
@@ -126,9 +128,23 @@ public sealed class VideoPlayableBehaviour : PlayableBehaviour
             if (videoPlayer == null || videoPlayer.clip == null)
                 return;
 
-            if (videoPlayer.isLooping)
-                videoPlayer.time = playable.GetTime() % videoPlayer.clip.length;
-            else
-                videoPlayer.time = System.Math.Min(playable.GetTime(), videoPlayer.clip.length);
+            videoPlayer.time = GetSafeVideoTime(playable.GetTime(), videoPlayer.clip.length, videoPlayer.isLooping);
+        }
+
+        static double GetSafeVideoTime(double time, double clipLength, bool isLooping)
+        {
+            if (clipLength <= 0.0)
+                return 0.0;
+
+            if (isLooping)
+            {
+                // Keep modulo result positive so pre-extrapolated / negative timeline times remain valid.
+                double wrapped = time % clipLength;
+                if (wrapped < 0.0)
+                    wrapped += clipLength;
+                return wrapped;
+            }
+
+            return System.Math.Max(0.0, System.Math.Min(time, clipLength));
         }
 }
