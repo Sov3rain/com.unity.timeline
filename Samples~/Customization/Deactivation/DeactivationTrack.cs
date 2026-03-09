@@ -68,7 +68,7 @@ namespace Timeline.Samples
             return mixer;
         }
 
-        internal void UpdateTrackMode()
+        public void UpdateTrackMode()
         {
             if (m_DeactivationMixer != null)
                 m_DeactivationMixer.postPlaybackState = m_PostPlaybackState;
